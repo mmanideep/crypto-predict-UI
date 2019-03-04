@@ -1,9 +1,10 @@
 import axios from 'axios';
-import { LOGIN_API } from './../routes';
+import { LOGIN_API } from '../constants';
 
 
 export function checkSession(){
-    return localStorage['token'] | false;
+    let is_user_logged_in =  Boolean(localStorage['token']);
+    return Boolean(is_user_logged_in);
 }
 
 export function loginUser(user_name, pswd, callBack){
@@ -20,13 +21,14 @@ export function loginUser(user_name, pswd, callBack){
             }
         }).then(
         response => {
-            console.log(JSON.stringify(response.data));
             localStorage['token'] = response.data['access_token'];
             if (typeof(callBack) === "function"){
                 callBack();
             }
         }
     )
+}
 
-
+export function logoutUser(){
+    localStorage.removeItem('token');
 }
