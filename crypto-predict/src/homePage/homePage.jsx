@@ -2,7 +2,9 @@ import React from 'react';
 import {Line}  from 'react-chartjs-2';
 import './homePage.css';
 import LogoutBtn from './../common/logoutBtn';
+import UserCardComponent from './../common/userCard';
 import { checkSession } from './../apiUtils/loginUtils';
+import { getUserDetails } from './../apiUtils/userUtils';
 import { getLastThirtyDaysStats } from './../apiUtils/cryptoUtils';
 import { 
     Bitcoin, BitcoinCash, Dogecoin, Ethereum, 
@@ -17,7 +19,8 @@ class HomePageComponent extends React.Component {
         this.state = {
             current_currency : Bitcoin,
             current_date: today.toLocaleDateString().split("/").join("-"),
-            graphStats: {}
+            graphStats: {},
+            userDetails: {}
         };
     }
 
@@ -43,7 +46,7 @@ class HomePageComponent extends React.Component {
 
     getStatsGraph() {
         let chartData = this.state.graphStats;
-        return <Line data={chartData} height={100} />;
+        return <Line data={chartData} className="h-75"/>;
 
     }
 
@@ -56,9 +59,26 @@ class HomePageComponent extends React.Component {
                     {graphStats: currenyGraphStats},
                     ()=>{console.log(comp.state.graphStats)}
                 );
-                console.log(response.data['payload']);
             }
         )
+    }
+
+    loadingIndicatior() {
+        return(
+            <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Loading...</span>
+            </div>
+        );
+    }
+
+    fetchUserDetails() {
+        let comp = this;
+        getUserDetails().then(
+            (response) => {
+                comp.setState({userDetails: response.data['payload']});
+                console.log(response.data['payload']);
+            }
+        );
     }
 
     componentWillMount() {
@@ -67,6 +87,7 @@ class HomePageComponent extends React.Component {
             this.props.history.push('/login');
         }
         this.fetchStats();
+        this.fetchUserDetails();
     }
 
     render() {
@@ -76,22 +97,25 @@ class HomePageComponent extends React.Component {
         return(
             <div className="container-fluid">
                 <div className="row header">
-                    <div className="col-10">
+                    <div className="col-sm-10">
                         <h2>Crypto Predict</h2>
                     </div>
-                    <div className="col-2">
+                    <div className="col-sm-2">
                         <LogoutBtn />
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-10">
-                        <h4>{comp.state.current_currency} Metrics</h4>
-                        { Object.keys(comp.state.graphStats).length > 0 ? comp.getStatsGraph() : null}
+                    <div className="col-sm-2 h-100">
+                        <UserCardComponent {...comp.state.userDetails} />
                     </div>
-                    <div className="col-2">
+
+                    <div className="col-sm-2 h-100">
                         <select onChange={
                             (event) => {
-                                comp.setState({current_currency:event.target.value}, () => comp.fetchStats())
+                                comp.setState({
+                                    current_currency:event.target.value,
+                                    graphStats: {}
+                                }, () => comp.fetchStats())
                             }
                         }>
                             <option value={Bitcoin}>{Bitcoin}</option>
@@ -101,6 +125,16 @@ class HomePageComponent extends React.Component {
                             <option value={Ethereum}>{Ethereum}</option>
                         </select>
                     </div>
+
+                    <div className="col-sm-8 h-100">
+                        <h4>{comp.state.current_currency} Metrics</h4>
+                        { 
+                            Object.keys(comp.state.graphStats).length > 0 ? 
+                            comp.getStatsGraph() : 
+                            comp.loadingIndicatior()
+                        }
+                    </div>
+                    
                 </div>
             </div>
         );
